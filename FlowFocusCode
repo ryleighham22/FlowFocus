@@ -1,0 +1,1361 @@
+import java.io.*;
+import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
+import java.awt.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.File;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.Calendar;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Date;
+import java.util.*;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.text.SimpleDateFormat;
+
+
+public class Main {
+    // Data structures to store user information
+    private static final Map<String, String> accounts = new HashMap<>();
+    private static final String ACCOUNTS_FILE = "accounts.txt";
+
+    public static void main(String[] args) {
+        //load accounts at program start
+        loadAccountsFromFile();
+
+        // To reset accounts (the rest of the code must be valid)
+        //resetAccounts();
+
+        // Main frame setup
+        JFrame frame = new JFrame("FlowFocus");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setSize(360, 640);
+        frame.setResizable(false);
+        frame.setLocationRelativeTo(null);
+
+        // Panel for the initial screen
+        JPanel initialPanel = createInitialScreen(frame);
+
+        // Add the initial panel to the frame
+        frame.add(initialPanel);
+
+        // Make the frame visible
+        frame.setVisible(true);
+    }
+
+    // To reset accounts
+//    private static void resetAccounts() {
+//        accounts.clear();
+//
+//        File file = new File(ACCOUNTS_FILE);
+//        if (file.exists()) {
+//            file.delete();
+//       }
+//    }
+
+    //Save account information to file, will show error if it fails
+    private static void saveAccountToFile(String email, String username, String password) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(ACCOUNTS_FILE, true))) {
+            writer.write(email + "," + username + "," + password);
+            writer.newLine();
+        } catch (IOException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(null, "Failed to save account. Please try again.", "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    //Load accounts from file to accounts map
+    private static void loadAccountsFromFile() {
+        File file = new File(ACCOUNTS_FILE);
+        if (!file.exists()) return;
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] parts = line.split(",");
+                if (parts.length == 3 ){
+                    String email = parts[0].trim();
+                    String username = parts[1].trim();
+                    accounts.put(email, username);
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    //Creates the initial screen where you can sign up or log in
+    private static JPanel createInitialScreen(JFrame frame) {
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setBackground(new Color(255, 245, 220)); // Light beige background
+
+        // Title
+        JLabel title = new JLabel("FlowFocus");
+        title.setFont(new Font("Serif", Font.BOLD, 24));
+        title.setForeground(new Color(178, 34, 34)); // Dark red color
+        title.setAlignmentX(Component.CENTER_ALIGNMENT);
+        panel.add(Box.createVerticalGlue());
+        panel.add(title);
+        panel.add(Box.createVerticalStrut(20));
+
+        // Sign Up Button
+        JButton signUpButton = new JButton("Sign Up");
+        signUpButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        signUpButton.setPreferredSize(new Dimension(150, 40));
+        signUpButton.setMaximumSize(new Dimension(150, 40));
+        panel.add(signUpButton);
+
+        // Login Button
+        JButton loginButton = new JButton("Log In");
+        loginButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        loginButton.setPreferredSize(new Dimension(150, 40));
+        loginButton.setMaximumSize(new Dimension(150, 40));
+        panel.add(Box.createVerticalStrut(10));
+        panel.add(loginButton);
+
+            // Add action listener to the Sign Up button
+            signUpButton.addActionListener(e -> {
+                frame.getContentPane().removeAll(); // Clear the frame
+                frame.add(createSignUpScreen(frame)); // Show the sign-up screen
+                frame.revalidate();
+                frame.repaint();
+            });
+
+            // Add action listener to the Log In button
+            loginButton.addActionListener(e -> {
+                frame.getContentPane().removeAll();
+                frame.add(createLoginScreen(frame));
+                frame.revalidate();
+                frame.repaint();
+            });
+
+            panel.add(Box.createVerticalGlue());
+            return panel;
+        }
+
+        // Creates sign up screen to make account
+        private static JPanel createSignUpScreen(JFrame frame) {
+            JPanel panel = new JPanel();
+            panel.setLayout(null);
+            panel.setBackground(new Color(255, 245, 220));
+            panel.setPreferredSize(new Dimension(360,1000));
+
+            // Title
+            JLabel title = new JLabel("FlowFocus");
+            title.setFont(new Font("Serif", Font.BOLD, 24));
+            title.setForeground(new Color(178, 34, 34)); // Dark red color
+            title.setBounds(120,10,200,30);
+            panel.add(title);
+
+            // Back Arrow Button (top-left)
+            JButton backButton = new JButton("<<");
+            backButton.setFont(new Font("Serif", Font.BOLD, 14));
+            backButton.setBounds(10,10,50,30);
+            backButton.setOpaque(false);
+            backButton.setContentAreaFilled(false);
+            backButton.setBorderPainted(false);
+            backButton.addActionListener(e -> {
+                frame.getContentPane().removeAll();
+                frame.add(createInitialScreen(frame)); // Return to the login/signup screen
+                frame.revalidate();
+                frame.repaint();
+            });
+            panel.add(backButton);
+
+            JTextField nameField = new JTextField();
+            JTextField emailField = new JTextField();
+            JTextField usernameField = new JTextField();
+            JPasswordField passwordField = new JPasswordField();
+
+            JCheckBox showPasswordCheckBox = new JCheckBox("Show Password");
+            showPasswordCheckBox.setFocusPainted(false);
+            showPasswordCheckBox.setBackground(new Color(255,245,220));
+            showPasswordCheckBox.setOpaque(true);
+            showPasswordCheckBox.addActionListener(e -> {
+                if (showPasswordCheckBox.isSelected()) {
+                    passwordField.setEchoChar((char) 0);
+                } else {
+                    passwordField.setEchoChar('•');
+                }
+            });
+            showPasswordCheckBox.setBounds(30,540,150,30);
+
+            panel.add(createLabeledField("Name:", nameField, new String []{
+                    "First and Last name must be used."
+            }, 30,60, 90));
+            panel.add(createLabeledField("Email:", emailField, new String[]{
+                    "Must be a valid email address."
+            },30,160, 90));
+            panel.add(createLabeledField("Username:", usernameField, new String[]{
+                    "Username cannot be longer than 15 characters.",
+                    "Username has to be unique."
+            },30,260, 130));
+            panel.add(createLabeledField("Password:", passwordField, new String[]{
+                    "Password must be at least 8 characters long.",
+                    "Password must contain at least one capital letter.",
+                    "Password must contain at least one number."
+            }, 30, 380, 160));
+            panel.add(showPasswordCheckBox);
+
+            // Submit button (right arrow)
+            JButton submitButton = new JButton(">>");
+            submitButton.setFont(new Font("Serif", Font.BOLD, 14));
+            submitButton.setBounds(290,570,50,30);
+            submitButton.setOpaque(false);
+            submitButton.setContentAreaFilled(false);
+            submitButton.setBorderPainted(false);
+
+            // Add action listener to the arrow button
+            submitButton.addActionListener(e -> {
+                String name = nameField.getText();
+                String email = emailField.getText();
+                String username = usernameField.getText();
+                String password = new String(passwordField.getPassword()).trim();
+
+                StringBuilder errorMessages = new StringBuilder();
+                String emailPattern="^[A-Za-z0-9+-_~!#$%&']+@[A-Za-z0-9]+\\.[A-Za-z]{2,6}";
+                String namePattern = "^[A-Za-z'-]+\\s[A-Za-z'-]+$";
+
+                // Validate inputs
+                if (name.isEmpty()){
+                    errorMessages.append("• Name cannot be empty.\n");
+                } else if (!name.matches(namePattern)){
+                    errorMessages.append("• Please provide your first and last name\n");
+                }
+                if (email.isEmpty()) {
+                    errorMessages.append("• Email cannot be empty. \n");
+                } else if (accounts.containsKey(email)) {
+                    errorMessages.append("• Email is already in use.\n");
+                } else if (!email.matches(emailPattern)){
+                    errorMessages.append("• Invalid email format. Please enter a valid email.\n");
+                }
+                if (username.isEmpty()) {
+                    errorMessages.append("• Username cannot be empty.\n");
+                } else if (username.length() > 15) {
+                    errorMessages.append("• Username cannot exceed 15 characters.\n");
+                } else if (accounts.containsValue(username)) {
+                    errorMessages.append("• Username is already in use.\n");
+                }
+                if (password.isEmpty()) {
+                    errorMessages.append("• Password cannot be empty.\n");
+                } else {
+                    if (password.length() < 8) {
+                        errorMessages.append("• Password must be at least 8 characters.\n");
+                    }
+                    if (!password.matches(".*[A-Z].*")) {
+                        errorMessages.append("• Password must contain at least one uppercase letter\n");
+                    }
+                    if (!password.matches(".*\\d.*")){
+                        errorMessages.append("• Password must contain at least one number.\n");
+                    }
+                }
+                if (!errorMessages.isEmpty()) {
+                    JOptionPane.showMessageDialog(frame, errorMessages.toString(), "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                accounts.put(email, username);
+                saveAccountToFile(email, username, password);
+                JOptionPane.showMessageDialog(frame, "Account created successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+
+
+                // Go back to the initial screen
+                frame.getContentPane().removeAll();
+                frame.add(createInitialScreen(frame));
+                frame.revalidate();
+                frame.repaint();
+            });
+            panel.add(submitButton);
+
+            passwordField.addKeyListener(new java.awt.event.KeyAdapter() {
+                public void keyPressed(java.awt.event.KeyEvent evt) {
+                    if (evt.getKeyCode() == java.awt.event.KeyEvent.VK_ENTER) {
+                        submitButton.doClick();
+                    }
+                }
+            });
+
+        return panel;
+    }
+
+    //Creates log in screen to log in
+    private static JPanel createLoginScreen(JFrame frame) {
+        JPanel panel = new JPanel();
+        panel.setLayout(null);
+        panel.setBackground(new Color(255, 245, 220));
+        panel.setPreferredSize(new Dimension(360,1000));
+
+        JLabel title = new JLabel("FlowFocus");
+        title.setFont(new Font("Serif", Font.BOLD, 24));
+        title.setForeground(new Color(178, 34, 34));
+        title.setBounds(120,10,200,30);
+        panel.add(title);
+
+        JButton backButton = new JButton("<<");
+        backButton.setFont(new Font("Serif", Font.BOLD, 14));
+        backButton.setBounds(10,10,50,30);
+        backButton.setOpaque(false);
+        backButton.setContentAreaFilled(false);
+        backButton.setBorderPainted(false);
+        backButton.addActionListener(e -> {
+            frame.getContentPane().removeAll();
+            frame.add(createInitialScreen(frame));
+            frame.revalidate();
+            frame.repaint();
+        });
+        panel.add(backButton);
+
+        JTextField usernameField = new JTextField();
+        JPasswordField passwordField = new JPasswordField();
+
+        JCheckBox showPasswordCheckBox = new JCheckBox("Show Password");
+        showPasswordCheckBox.setBounds(30,360,150,30);
+        showPasswordCheckBox.setFocusPainted(false);
+        showPasswordCheckBox.setBackground(new Color(255,245,220));
+        showPasswordCheckBox.setOpaque(true);
+        showPasswordCheckBox.setVisible(true);
+        showPasswordCheckBox.addActionListener(e -> {
+            if (showPasswordCheckBox.isSelected()) {
+                passwordField.setEchoChar((char) 0);
+            } else {
+                passwordField.setEchoChar('•');
+            }
+        });
+        panel.add(showPasswordCheckBox);
+
+        panel.add(createLabeledField("Username: ", usernameField, null, 30, 220, 90));
+        panel.add(createLabeledField("Password: ", passwordField, null, 30, 300, 100));
+
+
+        JButton submitButton = new JButton(">>");
+        submitButton.setFont(new Font("Serif", Font.BOLD, 14));
+        submitButton.setBounds(290,570,50,30);
+        submitButton.setOpaque(false);
+        submitButton.setContentAreaFilled(false);
+        submitButton.setBorderPainted(false);
+        submitButton.addActionListener(e -> {
+            String username = usernameField.getText();
+            String password = new String(passwordField.getPassword()).trim();
+
+            if (username.isEmpty() || password.isEmpty()) {
+                JOptionPane.showMessageDialog(frame, "Username and Password cannot be empty.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            String savedEmail = null;
+            for (Map.Entry<String, String> entry : accounts.entrySet()) {
+                if (entry.getValue().equals(username)) {
+                    savedEmail = entry.getKey();
+                    break;
+                }
+            }
+            if (savedEmail == null) {
+                JOptionPane.showMessageDialog(frame, "Account does not exist.", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+
+            boolean isValidPassword = false;
+            try (BufferedReader reader = new BufferedReader(new FileReader(ACCOUNTS_FILE))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    String[] parts = line.split(",");
+                    if (parts.length == 3) {
+                        String storedEmail = parts[0].trim();
+                        String storedPassword = parts[2].trim();
+                        if (storedEmail.equals(savedEmail) && storedPassword.equals(password)) {
+                            isValidPassword = true;
+                            break;
+                        }
+                    }
+                }
+            } catch (IOException ex) {
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(frame, "Failed to verify account. Please try again.", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+                if (isValidPassword) {
+                    JOptionPane.showMessageDialog(frame, "Logged in successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+                    frame.getContentPane().removeAll();
+                    frame.add(createMainPage(frame));
+                    frame.revalidate();
+                    frame.repaint();
+                } else {
+                    JOptionPane.showMessageDialog(frame, "Invalid password.", "Error", JOptionPane.ERROR_MESSAGE);
+                }
+
+        });
+        panel.add(submitButton);
+
+        passwordField.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                if (evt.getKeyCode() == java.awt.event.KeyEvent.VK_ENTER) {
+                    submitButton.doClick();
+                }
+            }
+        });
+
+        return panel;
+    }
+
+    // Creates Home/Main page to show all options
+    private static JPanel createMainPage(JFrame frame) {
+        JPanel panel = new JPanel();
+        panel.setLayout(null);
+        panel.setBackground(new Color(255, 245, 220));
+
+        JLabel title = new JLabel("FlowFocus");
+        title.setFont(new Font("Serif", Font.BOLD, 24));
+        title.setForeground(new Color(178, 34, 34));
+        title.setBounds(120,10,200,30);
+        panel.add(title);
+
+        JLabel menuIcon = new JLabel("\u2630");
+        menuIcon.setFont(new Font("Serif", Font.BOLD, 24));
+        menuIcon.setBounds(10,10,50,30);
+        menuIcon.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        menuIcon.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                showMenu(frame);
+            }
+        });
+        panel.add(menuIcon);
+
+        JButton createReportButton = new JButton("Create Report");
+        createReportButton.setBounds(75,240,200,50);
+        createReportButton.addActionListener(e -> {
+            frame.getContentPane().removeAll();
+            frame.add(createReportPage(frame));
+            frame.revalidate();
+            frame.repaint();
+        });
+        panel.add(createReportButton);
+
+        JButton viewReportButton = new JButton("View Reports");
+        viewReportButton.setBounds(75,300,200,50);
+        viewReportButton.addActionListener(e -> {
+            frame.getContentPane().removeAll();
+            frame.add(createViewReportPage(frame));
+            frame.revalidate();
+            frame.repaint();
+        });
+        panel.add(viewReportButton);
+
+        JButton viewCalendarButton = new JButton("View Calendar");
+        viewCalendarButton.setBounds(75,360,200,50);
+        viewCalendarButton.addActionListener(e -> {
+            frame.getContentPane().removeAll();
+            frame.add(createCalendarPage(frame));
+            frame.revalidate();
+            frame.repaint();
+        });
+        panel.add(viewCalendarButton);
+
+        return panel;
+    }
+
+    // Creates Report page where you can create reports
+    private static JPanel createReportPage(JFrame frame) {
+        JPanel mainPanel = new JPanel(new BorderLayout());
+        mainPanel.setBackground(new Color(255, 245, 220));
+
+        JLabel title = new JLabel("FlowFocus");
+        title.setFont(new Font("Serif", Font.BOLD, 24));
+        title.setForeground(new Color(178, 34, 34));
+        title.setBounds(120, 10, 200, 30);
+        mainPanel.add(title);
+
+        JLabel menuIcon = new JLabel("\u2630");
+        menuIcon.setFont(new Font("Serif", Font.BOLD, 24));
+        menuIcon.setBounds(10, 10, 50, 30);
+        menuIcon.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        menuIcon.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                showReportMenu(frame);
+            }
+        });
+        mainPanel.add(menuIcon);
+
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setBackground(new Color(255, 245, 220));
+
+        JPanel topPanel = new JPanel((new BorderLayout()));
+        topPanel.setOpaque(false);
+
+        panel.add(Box.createVerticalStrut(20));
+        panel.add(topPanel);
+        panel.add(Box.createVerticalStrut(20));
+
+        JLabel dateLabel = new JLabel();
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("MM-dd-yyyy");
+        LocalDate localDate = LocalDate.now();
+        dateLabel.setText(dtf.format(localDate));
+        panel.add(createReportLabeledField("Date: ", dateLabel));
+
+        JRadioButton[] bloodFlowButtons = {
+                new JRadioButton("Spotting"),
+                new JRadioButton("Light"),
+                new JRadioButton("Medium"),
+                new JRadioButton("Heavy"),
+                new JRadioButton("Extreme")
+        };
+        ButtonGroup bloodFlowGroup = new ButtonGroup();
+        for (JRadioButton button : bloodFlowButtons) {
+            button.setBackground(new Color(255, 245, 220));
+            button.setOpaque(true);
+            bloodFlowGroup.add(button);
+        }
+        JPanel bloodFlowPanel = new JPanel();
+        bloodFlowPanel.setLayout(new GridLayout(0, 2, 5, 5));
+        bloodFlowPanel.setBackground(new Color(255, 245, 220));
+        for (JRadioButton button : bloodFlowButtons) {
+            bloodFlowPanel.add(button);
+        }
+        bloodFlowPanel.setBounds(10, 50, 280, 100);
+        panel.add(createReportLabeledField("Blood Flow: ", bloodFlowPanel));
+
+        JRadioButton[] colorButton = {
+                new JRadioButton("Pink"),
+                new JRadioButton("Bright Red"),
+                new JRadioButton("Dark Red"),
+                new JRadioButton("Brown")
+        };
+        ButtonGroup colorGroup = new ButtonGroup();
+        for (JRadioButton button : colorButton) {
+            button.setBackground(new Color(255, 245, 220));
+            button.setOpaque(true);
+            colorGroup.add(button);
+        }
+        JPanel colorPanel = new JPanel();
+        colorPanel.setLayout(new GridLayout(0, 2, 5, 5));
+        colorPanel.setBackground(new Color(255, 245, 220));
+        for (JRadioButton button : colorButton) {
+            colorPanel.add(button);
+        }
+        colorPanel.setBounds(10, 160, 280, 80);
+        panel.add(createReportLabeledField("Color: ", colorPanel));
+
+        JCheckBox[] moodCheckBox = {
+                new JCheckBox("Happiness"),
+                new JCheckBox("Confident"),
+                new JCheckBox("High Libido"),
+                new JCheckBox("Irritable"),
+                new JCheckBox("Anger"),
+                new JCheckBox("Sadness"),
+                new JCheckBox("Anxiety"),
+                new JCheckBox("Depression")
+        };
+        for (JCheckBox checkBox : moodCheckBox) {
+            checkBox.setBackground(new Color(255, 245, 220));
+            checkBox.setOpaque(true);
+        }
+        JPanel moodFieldPanel = new JPanel();
+        moodFieldPanel.setLayout(new GridLayout(0, 2, 5, 5));
+        moodFieldPanel.setBackground(new Color(255, 245, 220));
+        for (JCheckBox checkBox : moodCheckBox) {
+            moodFieldPanel.add(checkBox);
+        }
+        moodFieldPanel.setBounds(10, 50, 290, 100);
+        panel.add(createReportLabeledField("Mood: ", moodFieldPanel));
+
+        JCheckBox[] symptomsCheckBoxes = {
+                new JCheckBox("Cramps"),
+                new JCheckBox("Headache"),
+                new JCheckBox("Fatigue"),
+                new JCheckBox("Acne"),
+                new JCheckBox("Tender Breasts"),
+                new JCheckBox("Bloating"),
+                new JCheckBox("Mood Swings"),
+                new JCheckBox("None")
+        };
+        for (JCheckBox checkBox : symptomsCheckBoxes) {
+            checkBox.setBackground(new Color(255, 245, 220));
+            checkBox.setOpaque(true);
+        }
+        JPanel symptomsPanel = new JPanel();
+        symptomsPanel.setLayout(new GridLayout(0, 2, 5, 5));
+        symptomsPanel.setBackground(new Color(255, 245, 220));
+        for (JCheckBox checkBox : symptomsCheckBoxes) {
+            symptomsPanel.add(checkBox);
+        }
+        symptomsPanel.setBounds(10, 160, 280, 100);
+        panel.add(createReportLabeledField("Symptoms: ", symptomsPanel));
+
+
+        JButton continueButton = new JButton(">>");
+        continueButton.setFont(new Font("Serif", Font.BOLD, 14));
+        continueButton.setOpaque(false);
+        continueButton.setContentAreaFilled(false);
+        continueButton.setBorderPainted(false);
+        continueButton.addActionListener(e -> {
+            String selectedBloodFlow = getSelectedButtonText(bloodFlowGroup);
+            String selectedColor = getSelectedButtonText(colorGroup);
+            String selectedMoods = getSelectedCheckBoxText(moodFieldPanel);
+            String selectedSymptoms = getSelectedCheckBoxText(symptomsPanel);
+            if (selectedBloodFlow == null || selectedColor == null) {
+                JOptionPane.showMessageDialog(frame, "Please select both Blood Flow and Color before continuing.", "Missing Information", JOptionPane.ERROR_MESSAGE);
+            } else {
+                frame.getContentPane().removeAll();
+                frame.add(createSummaryScreen(frame, dateLabel.getText(), selectedBloodFlow, selectedColor, selectedMoods, selectedSymptoms));
+                frame.revalidate();
+                frame.repaint();
+            }
+        });
+
+        JPanel bottomPanel = new JPanel(new BorderLayout());
+        bottomPanel.setBackground(new Color(255, 245, 220));
+        bottomPanel.add(Box.createHorizontalStrut(5), BorderLayout.WEST);
+        bottomPanel.add(continueButton, BorderLayout.EAST);
+
+        JScrollPane scrollPane = new JScrollPane(panel);
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollPane.setBorder(null);
+        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+
+        mainPanel.add(topPanel, BorderLayout.NORTH);
+        mainPanel.add(scrollPane, BorderLayout.CENTER);
+        mainPanel.add(bottomPanel, BorderLayout.SOUTH);
+        return mainPanel;
+    }
+
+    //Creates viewing page where you can see your Reports
+    private static JPanel createViewReportPage(JFrame frame) {
+        JPanel panel = new JPanel();
+        panel.setLayout(null);
+        panel.setBackground(new Color(255, 245, 220));
+
+        JLabel title = new JLabel("FlowFocus");
+        title.setFont(new Font("Serif", Font.BOLD, 24));
+        title.setForeground(new Color(178, 34, 34));
+        title.setBounds(120,10,200,30);
+        panel.add(title);
+
+        JLabel menuIcon = new JLabel("\u2630");
+        menuIcon.setFont(new Font("Serif", Font.BOLD, 24));
+        menuIcon.setBounds(10,10,50,30);
+        menuIcon.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        menuIcon.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                showViewReportMenu(frame);
+            }
+        });
+        panel.add(menuIcon);
+
+        JPanel linkPanel = new JPanel();
+        linkPanel.setLayout(new BoxLayout(linkPanel, BoxLayout.Y_AXIS));
+        linkPanel.setBackground(new Color(255,245,220));
+        linkPanel.setBounds(23,60,300,400);
+
+        File reportsFolder = new File(REPORTS_FOLDER_PATH);
+        if (reportsFolder.exists()) {
+            File[] reportFiles = reportsFolder.listFiles();
+            if (reportFiles != null) {
+                for (File reportFile : reportFiles) {
+                    if (reportFile.isFile() && reportFile.getName().startsWith("Report_")) {
+                        String fileName = reportFile.getName();
+                        JLabel reportLink = new JLabel("<HTML><U>" + fileName + "</U></HTML>");
+                        reportLink.setFont(new Font("Serif", Font.PLAIN, 16));
+                        reportLink.setForeground(Color.BLUE);
+                        reportLink.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+                        reportLink.setAlignmentX(Component.CENTER_ALIGNMENT);
+                        reportLink.addMouseListener(new java.awt.event.MouseAdapter() {
+                            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                                displayReportFile(reportFile);
+                            }
+                        });
+                        linkPanel.add(reportLink);
+                        linkPanel.add(Box.createVerticalStrut(10));
+                    }
+                }
+            }
+        }
+
+        JScrollPane scrollPane = new JScrollPane(linkPanel);
+        scrollPane.setBounds(23,60,300,400);
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollPane.setBorder(null);
+        panel.add(scrollPane);
+        panel.revalidate();
+        panel.repaint();
+        return panel;
+    }
+
+    //This grabs the files from the desktop
+    private static void displayReportFile(File reportFile) {
+        try {
+            Desktop.getDesktop().open(reportFile);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    //This is the path to the reports
+    private static final String REPORTS_FOLDER_PATH = System.getProperty("user.home") + File.separator + "Documents" + File.separator + "FlowFocus" + File.separator + "Reports";
+
+    //This makes the path to the reports
+    private static void createReportsFolder() {
+        File reportsFolder = new File(REPORTS_FOLDER_PATH);
+        if (!reportsFolder.exists()) {
+            reportsFolder.mkdirs();
+        }
+    }
+
+    //This makes a table for the calendar
+    private static JTable calendarTable;
+
+    //This is the calendar page to view the calendar
+    private static JPanel createCalendarPage(JFrame frame) {
+        JPanel panel = new JPanel();
+        panel.setLayout(null);
+        panel.setBackground(new Color(255, 245, 220));
+        panel.setPreferredSize(new Dimension(360,1000));
+
+        JLabel title = new JLabel("FlowFocus");
+        title.setFont(new Font("Serif", Font.BOLD, 24));
+        title.setForeground(new Color(178, 34, 34));
+        title.setBounds(120,10,200,30);
+        panel.add(title);
+
+        JLabel menuIcon = new JLabel("\u2630");
+        menuIcon.setFont(new Font("Serif", Font.BOLD, 24));
+        menuIcon.setBounds(10,10,50,30);
+        menuIcon.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        menuIcon.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                showCalendarMenu(frame);
+            }
+        });
+        panel.add(menuIcon);
+
+        Calendar calendar = Calendar.getInstance();
+        JLabel monthLabel=new JLabel(new SimpleDateFormat("MMMM yyyy").format(calendar.getTime()));
+        monthLabel.setFont(new Font("Serif", Font.BOLD, 18));
+        monthLabel.setBounds (120, 50, 200, 30);
+        panel.add(monthLabel);
+        calendarTable = new JTable() {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+        DefaultTableModel model = new DefaultTableModel(0,7);
+        model.setColumnIdentifiers(new Object[] {"Sun", "Mon", "Tues", "Wed", "Thurs", "Fri", "Sat"});
+        calendarTable.setModel(model);
+        updateCalendar(model, calendarTable, calendar);
+        calendarTable.setRowHeight(50);
+
+        JScrollPane calendarScrollPane = new JScrollPane(calendarTable);
+        calendarScrollPane.setBounds(23,100,300,400);
+        panel.add(calendarScrollPane);
+
+        JButton prevButton = new JButton("<< Previous");
+        prevButton.setBounds(10,510,120,30);
+        prevButton.addActionListener( e-> {
+            calendar.add(Calendar.MONTH, -1);
+            monthLabel.setText(new SimpleDateFormat("MMMM yyyy").format(calendar.getTime()));
+            updateCalendar(model, calendarTable, calendar);
+        });
+        panel.add(prevButton);
+
+        JButton nextButton = new JButton("Next >>");
+        nextButton.setBounds(210,510,120,30);
+        nextButton.addActionListener (e -> {
+            calendar.add(Calendar.MONTH, 1);
+            monthLabel.setText(new SimpleDateFormat("MMMM yyyy").format(calendar.getTime()));
+            updateCalendar(model, calendarTable, calendar);
+        });
+        panel.add(nextButton);
+
+        return panel;
+    }
+
+    //This updates the calendar for day, month, years
+    private static void updateCalendar(DefaultTableModel model, JTable table, Calendar calendar) {
+        model.setRowCount(0);
+
+        calendar.set(Calendar.DAY_OF_MONTH,1);
+        int startDay= calendar.get(Calendar.DAY_OF_WEEK);
+
+        int daysInMonth = calendar.getActualMaximum(Calendar.DAY_OF_MONTH);
+
+        Object[] week = new Object[7];
+        int dayCounter = 1;
+
+        for (int i=1; i < startDay; i++){
+            week[i-1] = "";
+        }
+        for (int i = startDay; i <=7; i++) {
+            week[i-1]= dayCounter;
+            dayCounter++;
+        }
+        model.addRow(week);
+
+        while (dayCounter <= daysInMonth) {
+            week = new Object[7];
+            for (int i=0; i <7; i++) {
+                if (dayCounter <= daysInMonth) {
+                    week[i] = dayCounter;
+                    dayCounter++;
+                } else {
+                    week [i]="";
+                }
+            }
+            model.addRow(week);
+        }
+        calendarTable.setModel(model);
+    }
+
+    //This is for the report dates in the report hyperlink
+    private static Set<String> loadReportDates() {
+        Set<String> reportDates = new HashSet<>();
+        File reportsFolder = new File(REPORTS_FOLDER_PATH);
+        if (reportsFolder.exists()) {
+            File[] reportFiles = reportsFolder.listFiles();
+            if (reportFiles != null) {
+                for (File reportFile : reportFiles) {
+                    if (reportFile.isFile() && reportFile.getName().startsWith("Report_")) {
+                        String fileName = reportFile.getName();
+                        String datePart = fileName.split("_")[1].replaceAll("-","/");
+                        reportDates.add(datePart);
+                    }
+                }
+            }
+        }
+        return reportDates;
+    }
+
+    //This creates the summary screen that shows you your inputs and the recommendations
+    private static JPanel createSummaryScreen(JFrame frame, String date, String bloodFlow, String color, String moods, String symptoms){
+        String recommendation = generateRecommendation(bloodFlow, color, moods, symptoms);
+
+        JPanel panel = new JPanel();
+        panel.setBackground(new Color(255, 245, 220));
+        panel.setLayout(null);
+
+        JLabel title = new JLabel("FlowFocus");
+        title.setFont(new Font("Serif", Font.BOLD, 24));
+        //title.setHorizontalAlignment(SwingConstants.CENTER);
+        title.setForeground(new Color(178,34,34));
+        title.setBounds(120,10,200,30);
+        panel.add(title);
+
+        JPanel summaryDetailsPanel = new JPanel();
+        summaryDetailsPanel.setLayout(new BoxLayout(summaryDetailsPanel, BoxLayout.Y_AXIS));
+        summaryDetailsPanel.setOpaque(false);
+        summaryDetailsPanel.setBounds(58,65,240,200);
+
+        summaryDetailsPanel.add(createSummaryField("Date: ", date));
+        summaryDetailsPanel.add(createSummaryField("Blood Flow: ", bloodFlow));
+        summaryDetailsPanel.add(createSummaryField("Color: ", color));
+
+        JTextArea moodsArea = new JTextArea(moods);
+        moodsArea.setWrapStyleWord(true);
+        moodsArea.setLineWrap(true);
+        moodsArea.setOpaque(false);
+        moodsArea.setEditable(false);
+        moodsArea.setFocusable(false);
+        moodsArea.setBackground(UIManager.getColor("Label.background"));
+        moodsArea.setFont(new Font("Serif", Font.PLAIN,16));
+        summaryDetailsPanel.add(createSummaryField("Moods: ", moodsArea));
+
+        JTextArea symptomsArea = new JTextArea(symptoms);
+        symptomsArea.setWrapStyleWord(true);
+        symptomsArea.setLineWrap(true);
+        symptomsArea.setOpaque(false);
+        symptomsArea.setEditable(false);
+        symptomsArea.setFocusable(false);
+        symptomsArea.setBackground(UIManager.getColor("Label.background"));
+        symptomsArea.setFont(new Font("Serif", Font.PLAIN, 16));
+        summaryDetailsPanel.add(createSummaryField("Symptoms: ", symptomsArea));
+        panel.add(summaryDetailsPanel);
+
+
+        JTextArea recommendationArea = new JTextArea(recommendation);
+        recommendationArea.setWrapStyleWord(true);
+        recommendationArea.setLineWrap(true);
+        recommendationArea.setOpaque(false);
+        recommendationArea.setEditable(false);
+        recommendationArea.setFocusable(false);
+        recommendationArea.setBackground(UIManager.getColor("Label.background"));
+        recommendationArea.setFont(new Font("Serif", Font.PLAIN, 16));
+
+        JScrollPane scrollPane = new JScrollPane(recommendationArea);
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        scrollPane.setBorder(BorderFactory.createEmptyBorder());
+        scrollPane.getViewport().setBackground(new Color(255,245,220));
+        scrollPane.setBorder(BorderFactory.createEmptyBorder());
+
+        JPanel recommendationPanel = new JPanel();
+        recommendationPanel.setLayout(new BoxLayout(recommendationPanel, BoxLayout.Y_AXIS));
+        recommendationPanel.setOpaque(false);
+        recommendationPanel.setBounds(58,300,250,250);
+
+        JLabel recommendationLabel = new JLabel("Recommendation");
+        recommendationLabel.setFont(new Font("Serif", Font.BOLD, 16));
+        recommendationLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        recommendationLabel.setOpaque(false);
+        recommendationLabel.setBackground(new Color(255,245,220));
+        recommendationPanel.add(recommendationLabel);
+        recommendationPanel.add(scrollPane);
+        panel.add(recommendationPanel);
+
+
+        JButton continueButton = new JButton(">>");
+        continueButton.setFont(new Font("Serif", Font.BOLD, 14));
+        continueButton.setBounds(290,570,50,30);
+        continueButton.setOpaque(false);
+        continueButton.setContentAreaFilled(false);
+        continueButton.setBorderPainted(false);
+        continueButton.addActionListener(e -> {
+           String fileName = saveSummaryToFile(date, bloodFlow, color, moods, symptoms, recommendation);
+
+           if (fileName !=null) {
+               JOptionPane.showMessageDialog(frame, "Report saved successfully!", "Confirmation", JOptionPane.INFORMATION_MESSAGE);
+
+               frame.getContentPane().removeAll();
+               frame.add(createMainPage(frame));
+               frame.revalidate();
+               frame.repaint();
+           } else {
+               JOptionPane.showMessageDialog(frame, "Failed to save report. Please try again.", "Error", JOptionPane.ERROR_MESSAGE);
+           }
+        });
+        panel.add(continueButton);
+
+        JButton backButton = new JButton("<<");
+        backButton.setFont(new Font("Serif", Font.BOLD, 14));
+        backButton.setBounds(10,570,50,30);
+        backButton.setOpaque(false);
+        backButton.setContentAreaFilled(false);
+        backButton.setBorderPainted(false);
+        backButton.addActionListener(e -> {
+            frame.getContentPane().removeAll();
+            frame.add(createReportPage(frame));
+            frame.revalidate();
+            frame.repaint();
+        });
+        panel.add(backButton);
+
+        return panel;
+    }
+
+    //This aligns and creates the summary
+    private static JPanel createSummaryField(String labelText, JTextArea textArea) {
+        JPanel panel = new JPanel();
+        panel.setLayout(new BorderLayout());
+        panel.setOpaque(false);
+
+        JLabel label = new JLabel(labelText);
+        label.setFont(new Font("Serif", Font.BOLD, 16));
+        label.setVerticalAlignment(SwingConstants.TOP);
+        panel.add(label, BorderLayout.WEST);
+        panel.add(textArea, BorderLayout.CENTER);
+
+        return panel;
+    }
+
+    //This aligns and creates the summary
+    private static JPanel createSummaryField(String labelText, String valueText) {
+        JPanel panel = new JPanel();
+        panel.setLayout(new BorderLayout());
+        panel.setOpaque(false);
+
+        JLabel label = new JLabel(labelText);
+        label.setFont(new Font("Serif", Font.BOLD, 16));
+        label.setVerticalAlignment(SwingConstants.TOP);
+        panel.add(label, BorderLayout.WEST);
+
+        JLabel value = new JLabel(valueText);
+        value.setFont(new Font("Serif", Font.PLAIN,16));
+        value.setVerticalAlignment(SwingConstants.TOP);
+        panel.add(value, BorderLayout.CENTER);
+
+        return panel;
+    }
+
+
+    //This saves the summary to the file path
+    private static String saveSummaryToFile(String date, String bloodFlow, String color, String moods, String symptoms, String recommendation){
+        createReportsFolder();
+
+        String formattedDate = new SimpleDateFormat("MM-dd-yy").format(new Date());
+        String fileName = "Report_" + formattedDate + ".txt";
+        String filePath = REPORTS_FOLDER_PATH + File.separator + fileName;
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
+            writer.write("Date: " + date + "\n");
+            writer.write("Blood Flow: " + bloodFlow + "\n");
+            writer.write("Color: " + color + "\n");
+            writer.write("Moods: " + moods + "\n");
+            writer.write("Symptoms: " + symptoms + "\n");
+            writer.write("Recommendation: " + recommendation + "\n");
+            System.out.println("Report saved successfully: " + filePath);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+        return fileName;
+    }
+
+    //This shows the hamburger menu on the Main page
+    private static void showMenu(JFrame frame) {
+        JPopupMenu popupMenu = new JPopupMenu();
+
+        JMenuItem createReportItem = new JMenuItem("Create Report");
+        createReportItem.addActionListener(e -> {
+                frame.getContentPane().removeAll();
+                frame.add(createReportPage(frame));
+                frame.revalidate();
+                frame.repaint();
+        });
+
+        JMenuItem viewReportsItem = new JMenuItem("View Reports");
+        viewReportsItem.addActionListener(e -> {
+            frame.getContentPane().removeAll();
+            frame.add(createViewReportPage(frame));
+            frame.revalidate();
+            frame.repaint();
+        });
+
+        JMenuItem viewCalendarItem = new JMenuItem("View Calendar");
+        viewCalendarItem.addActionListener(e -> {
+            frame.getContentPane().removeAll();
+            frame.add(createCalendarPage(frame));
+            frame.revalidate();
+            frame.repaint();
+
+        });
+
+        JMenuItem logOutItem = new JMenuItem("Log Out");
+        logOutItem.addActionListener(e -> {
+            frame.getContentPane().removeAll();
+            frame.add(createInitialScreen(frame));
+            frame.revalidate();
+            frame.repaint();
+        });
+
+        popupMenu.add(createReportItem);
+        popupMenu.add(viewReportsItem);
+        popupMenu.add(viewCalendarItem);
+        popupMenu.addSeparator();
+        popupMenu.add(logOutItem);
+
+        popupMenu.show(frame, 10, 50);
+    }
+
+    //This shows the hamburger menu on the Create Report Screen
+    private static void showReportMenu(JFrame frame) {
+        JPopupMenu popupMenu = new JPopupMenu();
+
+        JMenuItem createReportItem = new JMenuItem("View Report");
+        createReportItem.addActionListener(e -> {
+            frame.getContentPane().removeAll();
+            frame.add(createViewReportPage(frame));
+            frame.revalidate();
+            frame.repaint();
+        });
+
+        JMenuItem viewReportsItem = new JMenuItem("View Calendar");
+        viewReportsItem.addActionListener(e -> {
+            frame.getContentPane().removeAll();
+            frame.add(createCalendarPage(frame));
+            frame.revalidate();
+            frame.repaint();
+        });
+
+        JMenuItem viewCalendarItem = new JMenuItem("Home");
+        viewCalendarItem.addActionListener(e -> {
+            frame.getContentPane().removeAll();
+            frame.add(createMainPage(frame));
+            frame.revalidate();
+            frame.repaint();
+
+        });
+
+        JMenuItem logOutItem = new JMenuItem("Log Out");
+        logOutItem.addActionListener(e -> {
+            frame.getContentPane().removeAll();
+            frame.add(createInitialScreen(frame));
+            frame.revalidate();
+            frame.repaint();
+        });
+
+        popupMenu.add(createReportItem);
+        popupMenu.add(viewReportsItem);
+        popupMenu.add(viewCalendarItem);
+        popupMenu.addSeparator();
+        popupMenu.add(logOutItem);
+
+        popupMenu.show(frame, 10, 50);
+    }
+
+    //This shows the hamburger menu on the View Report screen
+    private static void showViewReportMenu(JFrame frame) {
+        JPopupMenu popupMenu = new JPopupMenu();
+
+        JMenuItem createReportItem = new JMenuItem("Create Report");
+        createReportItem.addActionListener(e -> {
+            frame.getContentPane().removeAll();
+            frame.add(createReportPage(frame));
+            frame.revalidate();
+            frame.repaint();
+        });
+
+        JMenuItem viewReportsItem = new JMenuItem("View Calendar");
+        viewReportsItem.addActionListener(e -> {
+            frame.getContentPane().removeAll();
+            frame.add(createCalendarPage(frame));
+            frame.revalidate();
+            frame.repaint();
+        });
+
+        JMenuItem viewCalendarItem = new JMenuItem("Home");
+        viewCalendarItem.addActionListener(e -> {
+            frame.getContentPane().removeAll();
+            frame.add(createMainPage(frame));
+            frame.revalidate();
+            frame.repaint();
+
+        });
+
+        JMenuItem logOutItem = new JMenuItem("Log Out");
+        logOutItem.addActionListener(e -> {
+            frame.getContentPane().removeAll();
+            frame.add(createInitialScreen(frame));
+            frame.revalidate();
+            frame.repaint();
+        });
+
+        popupMenu.add(createReportItem);
+        popupMenu.add(viewReportsItem);
+        popupMenu.add(viewCalendarItem);
+        popupMenu.addSeparator();
+        popupMenu.add(logOutItem);
+
+        popupMenu.show(frame, 10, 50);
+    }
+
+    //This shows the hamburger menu on the calendar page
+    private static void showCalendarMenu(JFrame frame) {
+        JPopupMenu popupMenu = new JPopupMenu();
+
+        JMenuItem createReportItem = new JMenuItem("Create Report");
+        createReportItem.addActionListener(e -> {
+            frame.getContentPane().removeAll();
+            frame.add(createReportPage(frame));
+            frame.revalidate();
+            frame.repaint();
+        });
+
+        JMenuItem viewReportsItem = new JMenuItem("View Reports");
+        viewReportsItem.addActionListener(e -> {
+            frame.getContentPane().removeAll();
+            frame.add(createViewReportPage(frame));
+            frame.revalidate();
+            frame.repaint();
+        });
+
+        JMenuItem viewCalendarItem = new JMenuItem("Home");
+        viewCalendarItem.addActionListener(e -> {
+            frame.getContentPane().removeAll();
+            frame.add(createMainPage(frame));
+            frame.revalidate();
+            frame.repaint();
+
+        });
+
+        JMenuItem logOutItem = new JMenuItem("Log Out");
+        logOutItem.addActionListener(e -> {
+            frame.getContentPane().removeAll();
+            frame.add(createInitialScreen(frame));
+            frame.revalidate();
+            frame.repaint();
+        });
+
+        popupMenu.add(createReportItem);
+        popupMenu.add(viewReportsItem);
+        popupMenu.add(viewCalendarItem);
+        popupMenu.addSeparator();
+        popupMenu.add(logOutItem);
+
+        popupMenu.show(frame, 10, 50);
+    }
+
+    //This creates the recommendations
+    private static String generateRecommendation(String bloodFlow, String color, String moods, String symptoms) {
+        StringBuilder recommendation = new StringBuilder("Based on your inputs: \n");
+
+        if (bloodFlow.equals("Heavy") || bloodFlow.equals("Extreme")) {
+            recommendation.append("Your flow seems to be " + bloodFlow + ". It's recommended to stay hydrated as this can reduce the length of your period and thin your blood. However " +
+                    "if this persists, please consult with your healthcare provider as it may be threatening.\n");
+        } else {
+            recommendation.append("Your flow seems to be " + bloodFlow + ". This is normal and typical to every cycle. Please keep an eye on your flow for further reports.\n");
+        }
+        if (color.equals("Dark Red") || color.equals("Brown")) {
+            recommendation.append("The color of your blood is " + color + ". This could indicate that it's older blood and your farther into your cycle. This is normal and isn't threatening." +
+                    " However, if the color changes to something other than the options previously listed, please consult with your healthcare provider.\n");
+        } else if (color.equals("Pink") || color.equals("Bright Red")) {
+            recommendation.append("The color of your blood is " + color + ". This could indicate that it's newer blood and your not that far into your cycle. This is normal and isn't threatening." +
+                    " However, if the color changes to something other than the options previously listed, please consult with your healthcare provider.\n");
+        }
+        if (moods.contains("Depression") || moods.contains("Anxiety")) {
+            recommendation.append("As you are experiencing ");
+            if (moods.contains("Depression") && moods.contains("Anxiety")) {
+                recommendation.append("Depression and Anxiety");
+            } else if (moods.contains("Depression")) {
+                recommendation.append("Depression");
+            } else if (moods.contains("Anxiety")) {
+                recommendation.append("Anxiety");
+            }
+            recommendation.append(", please consider speaking to a mental health professional or your healthcare provider. " +
+                    "Your mental health is important and vital in everyday life. If you are considering anything life threatening please call or the Suicide Prevention Lifeline @ 988.\n");
+        }
+        if (moods.contains("Happiness") || moods.contains("Confident") || moods.contains("High Libido") || moods.contains("Irritable") || moods.contains("Anger") || moods.contains("Sadness")) {
+            List<String> moodList = new ArrayList<>();
+            if (moods.contains("Happiness")) {
+                moodList.add("Happiness");
+            }
+            if (moods.contains("Confident")) {
+                moodList.add("Confident");
+            }
+            if (moods.contains("High Libido")) {
+                moodList.add("High Libido");
+            }
+            if (moods.contains("Irritable")) {
+                moodList.add("Irritable");
+            }
+            if (moods.contains("Anger")) {
+                moodList.add("Anger");
+            }
+            if (moods.contains("Sadness")) {
+                moodList.add("Sadness");
+            }
+            StringBuilder specificMoods = new StringBuilder();
+            if (moodList.size() > 1) {
+                for (int i=0; i < moodList.size() -1; i++) {
+                    specificMoods.append(moodList.get(i)).append(", ");
+                }
+                specificMoods.append("and ").append(moodList.get(moodList.size()-1));
+            } else if (moodList.size() ==1) {
+                specificMoods.append(moodList.get(0));
+            }
+            recommendation.append(specificMoods.toString()).append(" are mood(s) that are heightened during your period. However, these are normal to experience. Please keep an eye on these for further reports.\n");
+        }
+        if (symptoms.contains("Cramps")) {
+            recommendation.append("Mild exercise or a warm bath might help alleviate cramps. If that does not help, take some ibuprofen or pain reliever and make sure you eat a snack or meal" +
+                    " with this. If the cramps worsen and keep persisting, please consult with your healthcare provider.\n");
+        }
+        if (symptoms.contains("Headache")) {
+            recommendation.append("Taking ibuprofen or pain reliever should help alleviate this headache. Make sure you eat a snack or a meal with this. If the headache gets worse" +
+                    " and keeps persisting, please consult with your healthcare provider.\n");
+        }
+        if (symptoms.contains("Fatigue") || symptoms.contains("Acne") || symptoms.contains("Tender Breasts") || symptoms.contains("Bloating") || symptoms.contains("Mood Swings")) {
+            List<String> symptomList = new ArrayList<>();
+            if (symptoms.contains("Fatigue")) {
+                symptomList.add("Fatigue");
+            }
+            if (symptoms.contains("Tender Breasts")) {
+                symptomList.add("Tender Breasts");
+            }
+            if (symptoms.contains("Bloating")) {
+                symptomList.add("Bloating");
+            }
+            if (symptoms.contains("Mood Swings")){
+                symptomList.add("Mood Swings");
+            }
+            StringBuilder specificSymptoms = new StringBuilder();
+            if (symptomList.size() > 1) {
+                for (int i =0; i<symptomList.size()-1;i++) {
+                    specificSymptoms.append(symptomList.get(i)).append(", ");
+                }
+                specificSymptoms.append("and ").append(symptomList.get(symptomList.size()-1));
+            } else if (symptomList.size() == 1) {
+                specificSymptoms.append(symptomList.get(0));
+            }
+            recommendation.append("Having ").append(specificSymptoms.toString()).append(" as (a) symptom(s) on your period is normal. Nothing alarming here. Please keep an eye on these for further reports.\n");
+        }
+        return recommendation.toString();
+    }
+
+    //This shows the recommendation if the bloodFlow or Color is selected
+    private static String getSelectedButtonText(ButtonGroup buttonGroup) {
+        for (Enumeration<AbstractButton> buttons = buttonGroup.getElements(); buttons.hasMoreElements();) {
+            AbstractButton button = buttons.nextElement();
+
+            if (button.isSelected()) {
+                return button.getText();
+            }
+        }
+        return null;
+    }
+
+    //This creates the recommendation if moods and symptoms are selected
+    private static String getSelectedCheckBoxText(JPanel panel) {
+        StringBuilder selectedText = new StringBuilder();
+        for (Component component : panel.getComponents()) {
+            if (component instanceof JCheckBox) {
+                JCheckBox checkBox = (JCheckBox) component;
+                if (checkBox.isSelected()) {
+                    if (selectedText.length() > 0) {
+                        selectedText.append(", ");
+                    }
+                    selectedText.append(checkBox.getText());
+                }
+            }
+        }
+        return selectedText.toString();
+    }
+
+//This creates the requirements for the sign up screen
+    private static JPanel createLabeledField(String labelText, JTextField textField, String[] bulletPoints, int x, int y, int height) {
+        JPanel fieldPanel = new JPanel();
+        fieldPanel.setLayout(null);
+        fieldPanel.setBackground(new Color(255, 245, 220));// Light beige background
+        fieldPanel.setBounds(x, y,300,height);
+
+        JLabel label = new JLabel(labelText);
+        label.setBounds(0,10,80,30);
+        fieldPanel.add(label);
+
+        textField.setBounds(80,0,200,30);
+        fieldPanel.add(textField);
+
+        if (bulletPoints !=null) {
+            for(int i=0; i< bulletPoints.length; i++){
+                JLabel bulletPoint = new JLabel("<html>• " + bulletPoints[i]+ "</html>");
+                bulletPoint.setBounds(5,40 + i * 35, 260, 30);
+                fieldPanel.add(bulletPoint);
+            }
+        }
+
+        return fieldPanel;
+    }
+
+    //This creates the labels for the create report page
+    private static JPanel createReportLabeledField(String labelText, JComponent component){
+        JPanel cRPanel = new JPanel();
+        cRPanel.setLayout(new BoxLayout(cRPanel, BoxLayout.X_AXIS));
+        cRPanel.setOpaque(false);
+
+        JLabel label = new JLabel(labelText);
+        label.setFont(new Font("Serif", Font.PLAIN, 16));
+        label.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        component.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        cRPanel.add(label);
+        cRPanel.add(Box.createVerticalStrut(5));
+        cRPanel.add(component);
+        cRPanel.add(Box.createVerticalStrut(10));
+
+        return cRPanel;
+    }
+}
