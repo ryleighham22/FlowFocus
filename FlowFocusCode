@@ -7,6 +7,7 @@ import java.io.BufferedWriter;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.net.URI;
 import java.io.File;
 import java.util.List;
 import java.util.ArrayList;
@@ -28,6 +29,7 @@ public class Main {
     private static final Map<String, String> accounts = new HashMap<>();
     private static final String ACCOUNTS_FILE = "accounts.txt";
 
+    //The main setup
     public static void main(String[] args) {
         //load accounts at program start
         loadAccountsFromFile();
@@ -143,8 +145,8 @@ public class Main {
             return panel;
         }
 
-        // Creates sign up screen to make account
-        private static JPanel createSignUpScreen(JFrame frame) {
+    // Creates sign up screen to make account
+    private static JPanel createSignUpScreen(JFrame frame) {
             JPanel panel = new JPanel();
             panel.setLayout(null);
             panel.setBackground(new Color(255, 245, 220));
@@ -429,7 +431,7 @@ public class Main {
         panel.add(menuIcon);
 
         JButton createReportButton = new JButton("Create Report");
-        createReportButton.setBounds(75,240,200,50);
+        createReportButton.setBounds(75,200,200,50);
         createReportButton.addActionListener(e -> {
             frame.getContentPane().removeAll();
             frame.add(createReportPage(frame));
@@ -438,8 +440,8 @@ public class Main {
         });
         panel.add(createReportButton);
 
-        JButton viewReportButton = new JButton("View Reports");
-        viewReportButton.setBounds(75,300,200,50);
+        JButton viewReportButton = new JButton("Reports");
+        viewReportButton.setBounds(75,260,200,50);
         viewReportButton.addActionListener(e -> {
             frame.getContentPane().removeAll();
             frame.add(createViewReportPage(frame));
@@ -448,8 +450,8 @@ public class Main {
         });
         panel.add(viewReportButton);
 
-        JButton viewCalendarButton = new JButton("View Calendar");
-        viewCalendarButton.setBounds(75,360,200,50);
+        JButton viewCalendarButton = new JButton("Calendar");
+        viewCalendarButton.setBounds(75,320,200,50);
         viewCalendarButton.addActionListener(e -> {
             frame.getContentPane().removeAll();
             frame.add(createCalendarPage(frame));
@@ -457,6 +459,16 @@ public class Main {
             frame.repaint();
         });
         panel.add(viewCalendarButton);
+        
+        JButton viewSourcesButton = new JButton("Sources");
+        viewSourcesButton.setBounds(75,380,200,50);
+        viewSourcesButton.addActionListener(e -> {
+            frame.getContentPane().removeAll();
+            frame.add(createSourcesPage(frame));
+            frame.revalidate();
+            frame.repaint();
+        });
+        panel.add(viewSourcesButton);
 
         return panel;
     }
@@ -540,7 +552,7 @@ public class Main {
         for (JRadioButton button : colorButton) {
             colorPanel.add(button);
         }
-        colorPanel.setBounds(10, 160, 280, 80);
+        colorPanel.setBounds(10, 160, 280, 100);
         panel.add(createReportLabeledField("Color: ", colorPanel));
 
         JCheckBox[] moodCheckBox = {
@@ -563,7 +575,7 @@ public class Main {
         for (JCheckBox checkBox : moodCheckBox) {
             moodFieldPanel.add(checkBox);
         }
-        moodFieldPanel.setBounds(10, 50, 290, 100);
+        moodFieldPanel.setBounds(10, 270, 280, 100);
         panel.add(createReportLabeledField("Mood: ", moodFieldPanel));
 
         JCheckBox[] symptomsCheckBoxes = {
@@ -586,7 +598,7 @@ public class Main {
         for (JCheckBox checkBox : symptomsCheckBoxes) {
             symptomsPanel.add(checkBox);
         }
-        symptomsPanel.setBounds(10, 160, 280, 100);
+        symptomsPanel.setBounds(10, 380, 280, 100);
         panel.add(createReportLabeledField("Symptoms: ", symptomsPanel));
 
 
@@ -653,6 +665,7 @@ public class Main {
         linkPanel.setLayout(new BoxLayout(linkPanel, BoxLayout.Y_AXIS));
         linkPanel.setBackground(new Color(255,245,220));
         linkPanel.setBounds(23,60,300,400);
+        linkPanel.setForeground(new Color(0,0,0));
 
         File reportsFolder = new File(REPORTS_FOLDER_PATH);
         if (reportsFolder.exists()) {
@@ -663,7 +676,7 @@ public class Main {
                         String fileName = reportFile.getName();
                         JLabel reportLink = new JLabel("<HTML><U>" + fileName + "</U></HTML>");
                         reportLink.setFont(new Font("Serif", Font.PLAIN, 16));
-                        reportLink.setForeground(Color.BLUE);
+                        reportLink.setForeground(Color.BLACK);
                         reportLink.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
                         reportLink.setAlignmentX(Component.CENTER_ALIGNMENT);
                         reportLink.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -690,15 +703,25 @@ public class Main {
 
     //This grabs the files from the desktop
     private static void displayReportFile(File reportFile) {
+        if (!reportFile.exists()) {
+            JOptionPane.showMessageDialog(null, "Error: File does not exist.", "File Not Found", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
         try {
-            Desktop.getDesktop().open(reportFile);
+            String filePath = reportFile.getAbsolutePath();
+            ProcessBuilder pb = new ProcessBuilder("cmd.exe", "/c", filePath);
+            pb.start();
         } catch (IOException e) {
+            JOptionPane.showMessageDialog(null, "Error opening file: " + e.getMessage(), "IO Error", JOptionPane.ERROR_MESSAGE);
             e.printStackTrace();
         }
     }
 
+
+
     //This is the path to the reports
-    private static final String REPORTS_FOLDER_PATH = System.getProperty("user.home") + File.separator + "Documents" + File.separator + "FlowFocus" + File.separator + "Reports";
+    private static final String REPORTS_FOLDER_PATH = System.getProperty("user.home") + File.separator + "FlowFocus Files" + File.separator + "Reports Created";
 
     //This makes the path to the reports
     private static void createReportsFolder() {
@@ -830,6 +853,297 @@ public class Main {
             }
         }
         return reportDates;
+    }
+    
+    //This is the sources page
+    private static JPanel createSourcesPage(JFrame frame) {
+        JPanel panel = new JPanel();
+        panel.setLayout(null);
+        panel.setBackground(new Color(255, 245, 220));
+
+        JLabel title = new JLabel("FlowFocus");
+        title.setFont(new Font("Serif", Font.BOLD, 24));
+        title.setForeground(new Color(178, 34, 34));
+        title.setBounds(120,10,200,30);
+        panel.add(title);
+
+        JLabel menuIcon = new JLabel("\u2630");
+        menuIcon.setFont(new Font("Serif", Font.BOLD, 24));
+        menuIcon.setBounds(10,10,50,30);
+        menuIcon.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        menuIcon.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                showSourcesMenu(frame);
+            }
+        });
+        panel.add(menuIcon);
+
+        JPanel linkPanel = new JPanel();
+        linkPanel.setLayout(new BoxLayout(linkPanel, BoxLayout.Y_AXIS));
+        linkPanel.setBackground(new Color(255,245,220));
+        linkPanel.setBounds(23,60,300,400);
+        
+        JLabel head1 = new JLabel("What is it?");
+        head1.setFont(new Font("Serif", Font.BOLD, 20));
+        head1.setForeground(new Color(0,0,0));
+        head1.setBounds(10,70,200,30);
+        panel.add(head1);
+        
+        //Adding Sources
+        JLabel linkLabel1 = new JLabel("<html><a href='https://www.plannedparenthood.org/planned-parenthood-orange-san-bernardino/about-us/blog/how-to-track-your-menstrual-cycle-without-an-app'>How to track your Menstrual Cycle</a></html>");
+        linkLabel1.setFont(new Font("Serif", Font.PLAIN, 16));
+        linkLabel1.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        linkLabel1.setBounds(10, 90, 300, 30); // Positioned right below the heading
+
+        linkLabel1.addMouseListener(new java.awt.event.MouseAdapter()  {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                try {
+                    if (Desktop.isDesktopSupported()) {
+                        Desktop.getDesktop().browse(new URI("https://www.plannedparenthood.org/planned-parenthood-orange-san-bernardino/about-us/blog/how-to-track-your-menstrual-cycle-without-an-app"));
+                    } else {
+                        System.err.println("Desktop operations are not supported on this platform.");
+                    }
+                } catch (Exception e) {
+                    System.err.println("Error opening link: " + e.getMessage());
+                    e.printStackTrace();
+                }
+            }
+        });
+        panel.add(linkLabel1);
+
+        JLabel linkLabel2 = new JLabel("<html><a href='https://www.mayoclinic.org/healthy-lifestyle/womens-health/in-depth/menstrual-cycle/art-20047186'>Menstrual Cycle</a></html>");
+        linkLabel2.setFont(new Font("Serif", Font.PLAIN, 16));
+        linkLabel2.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        linkLabel2.setBounds(10, 110, 300, 30); 
+        linkLabel2.setForeground(new Color(0,0,0));
+       
+        linkLabel2.addMouseListener(new java.awt.event.MouseAdapter()  {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                try {
+                    if (Desktop.isDesktopSupported()) {
+                        Desktop.getDesktop().browse(new URI("https://www.mayoclinic.org/healthy-lifestyle/womens-health/in-depth/menstrual-cycle/art-20047186"));
+                    } else {
+                        System.err.println("Desktop operations are not supported on this platform.");
+                    }
+                } catch (Exception e) {
+                    System.err.println("Error opening link: " + e.getMessage());
+                    e.printStackTrace();
+                }
+            }
+        });
+        panel.add(linkLabel2);
+        
+        JLabel linkLabel3 = new JLabel("<html><a href='https://my.clevelandclinic.org/health/articles/10132-menstrual-cycle'>The Menstrual Cycle</a></html>");
+        linkLabel3.setFont(new Font("Serif", Font.PLAIN, 16));
+        linkLabel3.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        linkLabel3.setBounds(10, 130, 300, 30); 
+       
+        linkLabel3.addMouseListener(new java.awt.event.MouseAdapter()  {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                try {
+                    if (Desktop.isDesktopSupported()) {
+                        Desktop.getDesktop().browse(new URI("https://my.clevelandclinic.org/health/articles/10132-menstrual-cycle"));
+                    } else {
+                        System.err.println("Desktop operations are not supported on this platform.");
+                    }
+                } catch (Exception e) {
+                    System.err.println("Error opening link: " + e.getMessage());
+                    e.printStackTrace();
+                }
+            }
+        });
+        panel.add(linkLabel3);
+        
+        JLabel head2 = new JLabel("How much? Why that color?");
+        head2.setFont(new Font("Serif", Font.BOLD, 20));
+        head2.setForeground(new Color(0,0,0));
+        head2.setBounds(10,170,400,30);
+        panel.add(head2);
+        
+        JLabel linkLabel4 = new JLabel("<html><a href='https://helloclue.com/articles/cycle-a-z/what's-normal-period-volume-and-heaviness'>Heaviness of Flow</a></html>");
+        linkLabel4.setFont(new Font("Serif", Font.PLAIN, 16));
+        linkLabel4.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        linkLabel4.setBounds(10, 190, 300, 30); 
+       
+        linkLabel4.addMouseListener(new java.awt.event.MouseAdapter()  {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                try {
+                    if (Desktop.isDesktopSupported()) {
+                        Desktop.getDesktop().browse(new URI("https://helloclue.com/articles/cycle-a-z/what's-normal-period-volume-and-heaviness"));
+                    } else {
+                        System.err.println("Desktop operations are not supported on this platform.");
+                    }
+                } catch (Exception e) {
+                    System.err.println("Error opening link: " + e.getMessage());
+                    e.printStackTrace();
+                }
+            }
+        });
+        panel.add(linkLabel4);
+        
+        JLabel linkLabel5 = new JLabel("<html><a href='https://www.ncbi.nlm.nih.gov/books/NBK279294/'>Period Flow</a></html>");
+        linkLabel5.setFont(new Font("Serif", Font.PLAIN, 16));
+        linkLabel5.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        linkLabel5.setBounds(10, 210, 300, 30); 
+       
+        linkLabel5.addMouseListener(new java.awt.event.MouseAdapter()  {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                try {
+                    if (Desktop.isDesktopSupported()) {
+                        Desktop.getDesktop().browse(new URI("https://www.ncbi.nlm.nih.gov/books/NBK279294/"));
+                    } else {
+                        System.err.println("Desktop operations are not supported on this platform.");
+                    }
+                } catch (Exception e) {
+                    System.err.println("Error opening link: " + e.getMessage());
+                    e.printStackTrace();
+                }
+            }
+        });
+        panel.add(linkLabel5);
+        
+        JLabel linkLabel6 = new JLabel("<html><a href='https://flo.health/menstrual-cycle/health/period/period-blood-color'>Blood Color</a></html>");
+        linkLabel6.setFont(new Font("Serif", Font.PLAIN, 16));
+        linkLabel6.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        linkLabel6.setBounds(10, 230, 300, 30); 
+       
+        linkLabel6.addMouseListener(new java.awt.event.MouseAdapter()  {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                try {
+                    if (Desktop.isDesktopSupported()) {
+                        Desktop.getDesktop().browse(new URI("https://flo.health/menstrual-cycle/health/period/period-blood-color"));
+                    } else {
+                        System.err.println("Desktop operations are not supported on this platform.");
+                    }
+                } catch (Exception e) {
+                    System.err.println("Error opening link: " + e.getMessage());
+                    e.printStackTrace();
+                }
+            }
+        });
+        panel.add(linkLabel6);
+        
+        JLabel linkLabel7 = new JLabel("<html><a href='https://www.healthline.com/health/womens-health/period-blood'>Period Blood</a></html>");
+        linkLabel7.setFont(new Font("Serif", Font.PLAIN, 16));
+        linkLabel7.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        linkLabel7.setBounds(10, 250, 300, 30); 
+       
+        linkLabel7.addMouseListener(new java.awt.event.MouseAdapter()  {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                try {
+                    if (Desktop.isDesktopSupported()) {
+                        Desktop.getDesktop().browse(new URI("https://www.healthline.com/health/womens-health/period-blood"));
+                    } else {
+                        System.err.println("Desktop operations are not supported on this platform.");
+                    }
+                } catch (Exception e) {
+                    System.err.println("Error opening link: " + e.getMessage());
+                    e.printStackTrace();
+                }
+            }
+        });
+        panel.add(linkLabel7);
+        
+        JLabel head3 = new JLabel("Why do I feel like this?");
+        head3.setFont(new Font("Serif", Font.BOLD, 20));
+        head3.setForeground(new Color(0,0,0));
+        head3.setBounds(10,290,400,30);
+        panel.add(head3);
+        
+        JLabel linkLabel8 = new JLabel("<html><a href='https://www.mayoclinic.org/diseases-conditions/premenstrual-syndrome/symptoms-causes/syc-20376780'>PMS-ing</a></html>");
+        linkLabel8.setFont(new Font("Serif", Font.PLAIN, 16));
+        linkLabel8.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        linkLabel8.setBounds(10, 310, 300, 30); 
+       
+        linkLabel8.addMouseListener(new java.awt.event.MouseAdapter()  {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                try {
+                    if (Desktop.isDesktopSupported()) {
+                        Desktop.getDesktop().browse(new URI("https://www.mayoclinic.org/diseases-conditions/premenstrual-syndrome/symptoms-causes/syc-20376780"));
+                    } else {
+                        System.err.println("Desktop operations are not supported on this platform.");
+                    }
+                } catch (Exception e) {
+                    System.err.println("Error opening link: " + e.getMessage());
+                    e.printStackTrace();
+                }
+            }
+        });
+        panel.add(linkLabel8);
+        
+        JLabel linkLabel9 = new JLabel("<html><a href='https://www.healthline.com/health/womens-health/period-signs'>Period Signs</a></html>");
+        linkLabel9.setFont(new Font("Serif", Font.PLAIN, 16));
+        linkLabel9.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        linkLabel9.setBounds(10, 330, 300, 30); 
+       
+        linkLabel9.addMouseListener(new java.awt.event.MouseAdapter()  {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                try {
+                    if (Desktop.isDesktopSupported()) {
+                        Desktop.getDesktop().browse(new URI("https://www.healthline.com/health/womens-health/period-signs"));
+                    } else {
+                        System.err.println("Desktop operations are not supported on this platform.");
+                    }
+                } catch (Exception e) {
+                    System.err.println("Error opening link: " + e.getMessage());
+                    e.printStackTrace();
+                }
+            }
+        });
+        panel.add(linkLabel9);
+        
+        JLabel linkLabel10 = new JLabel("<html><a href='https://drbrighten.com/how-hormones-affect-mood-throughout-menstrual-cycle/'>My Moods</a></html>");
+        linkLabel10.setFont(new Font("Serif", Font.PLAIN, 16));
+        linkLabel10.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        linkLabel10.setBounds(10, 350, 300, 30); 
+       
+        linkLabel10.addMouseListener(new java.awt.event.MouseAdapter()  {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                try {
+                    if (Desktop.isDesktopSupported()) {
+                        Desktop.getDesktop().browse(new URI("https://drbrighten.com/how-hormones-affect-mood-throughout-menstrual-cycle/"));
+                    } else {
+                        System.err.println("Desktop operations are not supported on this platform.");
+                    }
+                } catch (Exception e) {
+                    System.err.println("Error opening link: " + e.getMessage());
+                    e.printStackTrace();
+                }
+            }
+        });
+        panel.add(linkLabel10);
+        
+        JLabel linkLabel11 = new JLabel("<html><a href='https://www.everydayhealth.com/womens-health/how-your-menstrual-cycle-affects-your-behavior.aspx'>Mood Changes</a></html>");
+        linkLabel11.setFont(new Font("Serif", Font.PLAIN, 16));
+        linkLabel11.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        linkLabel11.setBounds(10, 370, 300, 30); 
+       
+        linkLabel11.addMouseListener(new java.awt.event.MouseAdapter()  {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                try {
+                    if (Desktop.isDesktopSupported()) {
+                        Desktop.getDesktop().browse(new URI("https://www.everydayhealth.com/womens-health/how-your-menstrual-cycle-affects-your-behavior.aspx"));
+                    } else {
+                        System.err.println("Desktop operations are not supported on this platform.");
+                    }
+                } catch (Exception e) {
+                    System.err.println("Error opening link: " + e.getMessage());
+                    e.printStackTrace();
+                }
+            }
+        });
+        panel.add(linkLabel11);
+
+
+        JScrollPane scrollPane = new JScrollPane(linkPanel);
+        scrollPane.setBounds(23,60,300,400);
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollPane.setBorder(null);
+        panel.add(scrollPane);
+        panel.revalidate();
+        panel.repaint();
+        
+        return panel;
     }
 
     //This creates the summary screen that shows you your inputs and the recommendations
@@ -996,7 +1310,7 @@ public class Main {
             writer.write("Color: " + color + "\n");
             writer.write("Moods: " + moods + "\n");
             writer.write("Symptoms: " + symptoms + "\n");
-            writer.write("Recommendation: " + recommendation + "\n");
+            writer.write("Recommendation: " + recommendation + "\n"+ "\n");
             System.out.println("Report saved successfully: " + filePath);
         } catch (IOException e) {
             e.printStackTrace();
@@ -1017,7 +1331,7 @@ public class Main {
                 frame.repaint();
         });
 
-        JMenuItem viewReportsItem = new JMenuItem("View Reports");
+        JMenuItem viewReportsItem = new JMenuItem("Reports");
         viewReportsItem.addActionListener(e -> {
             frame.getContentPane().removeAll();
             frame.add(createViewReportPage(frame));
@@ -1025,13 +1339,20 @@ public class Main {
             frame.repaint();
         });
 
-        JMenuItem viewCalendarItem = new JMenuItem("View Calendar");
+        JMenuItem viewCalendarItem = new JMenuItem("Calendar");
         viewCalendarItem.addActionListener(e -> {
             frame.getContentPane().removeAll();
             frame.add(createCalendarPage(frame));
             frame.revalidate();
             frame.repaint();
-
+        });
+        
+        JMenuItem viewSourcesItem = new JMenuItem("Sources");
+        viewSourcesItem.addActionListener(e -> {
+            frame.getContentPane().removeAll();
+            frame.add(createSourcesPage(frame));
+            frame.revalidate();
+            frame.repaint();
         });
 
         JMenuItem logOutItem = new JMenuItem("Log Out");
@@ -1045,6 +1366,7 @@ public class Main {
         popupMenu.add(createReportItem);
         popupMenu.add(viewReportsItem);
         popupMenu.add(viewCalendarItem);
+        popupMenu.add(viewSourcesItem);
         popupMenu.addSeparator();
         popupMenu.add(logOutItem);
 
@@ -1055,7 +1377,7 @@ public class Main {
     private static void showReportMenu(JFrame frame) {
         JPopupMenu popupMenu = new JPopupMenu();
 
-        JMenuItem createReportItem = new JMenuItem("View Report");
+        JMenuItem createReportItem = new JMenuItem("Reports");
         createReportItem.addActionListener(e -> {
             frame.getContentPane().removeAll();
             frame.add(createViewReportPage(frame));
@@ -1063,16 +1385,24 @@ public class Main {
             frame.repaint();
         });
 
-        JMenuItem viewReportsItem = new JMenuItem("View Calendar");
-        viewReportsItem.addActionListener(e -> {
+        JMenuItem viewCalendarItem = new JMenuItem("Calendar");
+        viewCalendarItem.addActionListener(e -> {
             frame.getContentPane().removeAll();
             frame.add(createCalendarPage(frame));
             frame.revalidate();
             frame.repaint();
         });
+        
+        JMenuItem viewSourcesItem = new JMenuItem("Sources");
+        viewSourcesItem.addActionListener(e -> {
+            frame.getContentPane().removeAll();
+            frame.add(createSourcesPage(frame));
+            frame.revalidate();
+            frame.repaint();
+        });
 
-        JMenuItem viewCalendarItem = new JMenuItem("Home");
-        viewCalendarItem.addActionListener(e -> {
+        JMenuItem viewHomeItem = new JMenuItem("Home");
+        viewHomeItem.addActionListener(e -> {
             frame.getContentPane().removeAll();
             frame.add(createMainPage(frame));
             frame.revalidate();
@@ -1089,8 +1419,9 @@ public class Main {
         });
 
         popupMenu.add(createReportItem);
-        popupMenu.add(viewReportsItem);
         popupMenu.add(viewCalendarItem);
+        popupMenu.add(viewSourcesItem);
+        popupMenu.add(viewHomeItem);
         popupMenu.addSeparator();
         popupMenu.add(logOutItem);
 
@@ -1109,16 +1440,24 @@ public class Main {
             frame.repaint();
         });
 
-        JMenuItem viewReportsItem = new JMenuItem("View Calendar");
-        viewReportsItem.addActionListener(e -> {
+        JMenuItem viewCalendarItem = new JMenuItem("Calendar");
+        viewCalendarItem.addActionListener(e -> {
             frame.getContentPane().removeAll();
             frame.add(createCalendarPage(frame));
             frame.revalidate();
             frame.repaint();
         });
+        
+        JMenuItem viewSourcesItem = new JMenuItem("Sources");
+        viewSourcesItem.addActionListener(e -> {
+            frame.getContentPane().removeAll();
+            frame.add(createSourcesPage(frame));
+            frame.revalidate();
+            frame.repaint();
+        });
 
-        JMenuItem viewCalendarItem = new JMenuItem("Home");
-        viewCalendarItem.addActionListener(e -> {
+        JMenuItem viewHomeItem = new JMenuItem("Home");
+        viewHomeItem.addActionListener(e -> {
             frame.getContentPane().removeAll();
             frame.add(createMainPage(frame));
             frame.revalidate();
@@ -1135,8 +1474,9 @@ public class Main {
         });
 
         popupMenu.add(createReportItem);
-        popupMenu.add(viewReportsItem);
         popupMenu.add(viewCalendarItem);
+        popupMenu.add(viewSourcesItem);
+        popupMenu.add(viewHomeItem);
         popupMenu.addSeparator();
         popupMenu.add(logOutItem);
 
@@ -1155,16 +1495,24 @@ public class Main {
             frame.repaint();
         });
 
-        JMenuItem viewReportsItem = new JMenuItem("View Reports");
+        JMenuItem viewReportsItem = new JMenuItem("Reports");
         viewReportsItem.addActionListener(e -> {
             frame.getContentPane().removeAll();
             frame.add(createViewReportPage(frame));
             frame.revalidate();
             frame.repaint();
         });
+        
+        JMenuItem viewSourcesItem = new JMenuItem("Sources");
+        viewSourcesItem.addActionListener(e -> {
+            frame.getContentPane().removeAll();
+            frame.add(createSourcesPage(frame));
+            frame.revalidate();
+            frame.repaint();
+        });
 
-        JMenuItem viewCalendarItem = new JMenuItem("Home");
-        viewCalendarItem.addActionListener(e -> {
+        JMenuItem viewHomeItem = new JMenuItem("Home");
+        viewHomeItem.addActionListener(e -> {
             frame.getContentPane().removeAll();
             frame.add(createMainPage(frame));
             frame.revalidate();
@@ -1182,12 +1530,68 @@ public class Main {
 
         popupMenu.add(createReportItem);
         popupMenu.add(viewReportsItem);
-        popupMenu.add(viewCalendarItem);
+        popupMenu.add(viewSourcesItem);
+        popupMenu.add(viewHomeItem);
         popupMenu.addSeparator();
         popupMenu.add(logOutItem);
 
         popupMenu.show(frame, 10, 50);
     }
+    
+  //This shows the hamburger menu on the View Report screen
+    private static void showSourcesMenu(JFrame frame) {
+        JPopupMenu popupMenu = new JPopupMenu();
+
+        JMenuItem createReportItem = new JMenuItem("Create Report");
+        createReportItem.addActionListener(e -> {
+                frame.getContentPane().removeAll();
+                frame.add(createReportPage(frame));
+                frame.revalidate();
+                frame.repaint();
+        });
+
+        JMenuItem viewReportsItem = new JMenuItem("Reports");
+        viewReportsItem.addActionListener(e -> {
+            frame.getContentPane().removeAll();
+            frame.add(createViewReportPage(frame));
+            frame.revalidate();
+            frame.repaint();
+        });
+
+        JMenuItem viewCalendarItem = new JMenuItem("Calendar");
+        viewCalendarItem.addActionListener(e -> {
+            frame.getContentPane().removeAll();
+            frame.add(createCalendarPage(frame));
+            frame.revalidate();
+            frame.repaint();
+        });
+        
+        JMenuItem viewHomeItem = new JMenuItem("Home");
+        viewHomeItem.addActionListener(e -> {
+        	frame.getContentPane().removeAll();
+        	frame.add(createMainPage(frame));
+        	frame.revalidate();
+        	frame.repaint();
+        });
+
+        JMenuItem logOutItem = new JMenuItem("Log Out");
+        logOutItem.addActionListener(e -> {
+            frame.getContentPane().removeAll();
+            frame.add(createInitialScreen(frame));
+            frame.revalidate();
+            frame.repaint();
+        });
+
+        popupMenu.add(createReportItem);
+        popupMenu.add(viewReportsItem);
+        popupMenu.add(viewCalendarItem);
+        popupMenu.add(viewHomeItem);
+        popupMenu.addSeparator();
+        popupMenu.add(logOutItem);
+
+        popupMenu.show(frame, 10, 50);
+    }
+
 
     //This creates the recommendations
     private static String generateRecommendation(String bloodFlow, String color, String moods, String symptoms) {
